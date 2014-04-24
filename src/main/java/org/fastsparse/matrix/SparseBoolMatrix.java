@@ -6,6 +6,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.fastsparse.util.Timer;
+
 public class SparseBoolMatrix {
 	int nrow;
 	
@@ -75,6 +77,49 @@ public class SparseBoolMatrix {
 		return m;
 	}
 	
+	/**
+	 * Very efficiently computes sparse boolean matrix product 
+	 * and then sums the rows.
+	 * 
+	 * @param b
+	 * @return rowSums( t(a) %*% b )
+	 */
+	public int[] prodSum(SparseBoolMatrix b) {
+		int[] rowSum = new int[ cols.size() ];
+		
+		int[] fcounts = new int[ nrow ];
+		for (int col = 0; col < cols.size(); col++) {
+			ArrayList<Integer> colValues = cols.get(col);
+			for (int i = 0; i < colValues.size(); i++) {
+				fcounts[colValues.get(i)]++;
+			}
+		}
+		
+		// creating arrays for each feature, using the fcounts
+		int[][] feat2cols = new int[ nrow ][];
+		for (int row = 0; row < nrow; row++) {
+			feat2cols[row] = new int[ fcounts[row] ];
+		}
+		
+		for (int col = 0; col < cols.size(); col++) {
+			for (int row : cols.get(col)) {
+				feat2cols[row][ --fcounts[row] ] = col;
+			}
+		}
+		
+		// multiplying and summing the rows
+		for (int col2 = 0; col2 < b.cols.size(); col2++) {
+			for (int feat : b.cols.get(col2)) {
+				int[] cols1 = feat2cols[feat];
+				for (int c : cols1) {
+					rowSum[c]++;
+				}
+			}
+		}
+		
+		return rowSum;
+	}
+	
 	public String getStats() {
 		return String.format("[ %d x %d ] with %d nonzeros.", nrow(), ncol(), sum() );
 	}
@@ -89,6 +134,16 @@ public class SparseBoolMatrix {
 		System.out.println( "m1 = " + m1.getStats() );
 		System.out.println( "m2 = " + m2.getStats() );
 		
+		Timer.tic();
+		int[] p = m1.prodSum(m2);
+		Timer.toc();
+		long sum = 0;
+		for (int i = 0; i < p.length; i++) {
+			sum += p[i];
+		}
+		System.out.println( sum );
+		System.out.println( "p[0] = " + p[0] + " (should be "+ 38198 +" )" ); 
+		System.out.println( "p[1] = " + p[1] + " (should be "+ 34573 +" )" );
 	}
 
 }
