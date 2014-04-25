@@ -15,15 +15,16 @@ Calculation of crossproduct between m1 and m2 ( ```t(m1) %*% m2``` ) using Intel
 - SparseBoolMatrix takes **190ms** (Java 7).
 - R Matrix package takes **700ms** (R 3.1.0, Matrix_1.1-3).
 
-Java code is
+Measured Java code:
 ```java
 m1.prod( m2 );
 ```
 
-R code:
-```r
+Measured R code:
+```s
 crossprod(m1, m2)
 ```
+
 Notes:
 - In R the matrices m1 and m2 are sparse column-oriented matrices (created using sparseMatrix).
 - The Matrix package in R uses SuiteSparse under its hood, so the crossproduct is running in optimised C code.
