@@ -180,7 +180,7 @@ public class SparseBoolMatrix {
 		System.out.println( "m1 = " + m1.getStats() );
 		System.out.println( "m2 = " + m2.getStats() );
 
-		// testing product:
+		// testing prod():
 		Timer.tic();
 		int[] prod = m1.prod(m2);
 		Timer.toc(">>> m1.prod(m2)");
@@ -190,15 +190,15 @@ public class SparseBoolMatrix {
 			// should be prod = [ 14, 14, 11, 12, 12, 15... ]
 		); 
 
-		// testing prodSum:
+		// testing prod() other way: (should not be used in practice because m1 is bigger than m2)
+		Timer.tic();
+		prod = m2.prod(m1);
+		Timer.toc(">>> m2.prod(m1)");
+
+		// testing prodSum():
 		Timer.tic();
 		int[] prodSum = m1.prodSum(m2);
 		Timer.toc(">>> m1.prodSum( m2 )");
-		long sum = 0;
-		for (int i = 0; i < prodSum.length; i++) {
-			sum += prodSum[i];
-		}
-		System.out.println( sum );
 		System.out.println( "p[0] = " + prodSum[0] + " (should be "+ 38198 +")" ); 
 		System.out.println( "p[1] = " + prodSum[1] + " (should be "+ 34573 +")" );
 	}
