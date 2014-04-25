@@ -11,8 +11,12 @@ public class Timer {
 	}
 	
 	public static long toc() {
+		return toc("It");
+	}
+	
+	public static long toc(String process) {
 		t2 = new Date().getTime();
-		System.out.println("It took " + (t2 - t1) + " ms.");
+		System.out.println(process + " took " + (t2 - t1) + " ms.");
 		return t2 - t1;
 	}
 }

@@ -78,11 +78,12 @@ public class SparseBoolMatrix {
 	}
 	
 	/**
-	 * Very efficiently computes sparse boolean matrix product 
-	 * and then sums the rows.
+	 * Very efficiently computes:
+	 * 1) cross-product of two sparse boolean matrices 
+	 * 2) sum along the rows of the resulting matrix.
 	 * 
 	 * @param b
-	 * @return rowSums( t(a) %*% b )
+	 * @return rowSums( t(a) %*% b ), matrix a is this object.
 	 */
 	public int[] prodSum(SparseBoolMatrix b) {
 		int[] rowSum = new int[ cols.size() ];
@@ -120,6 +121,51 @@ public class SparseBoolMatrix {
 		return rowSum;
 	}
 	
+	/**
+	 * Very efficiently computes cross-product between two sparse boolean matrices. 
+	 * 
+	 * @param b
+	 * @return t(a) %*% b, stored in single int vector, column oriented. Matrix a is this object.
+	 */
+	public int[] prod(SparseBoolMatrix b) {
+		int[] prod = new int[ cols.size() * b.cols.size() ];
+		
+		int[] fcounts = new int[ nrow ];
+		for (int col = 0; col < cols.size(); col++) {
+			ArrayList<Integer> colValues = cols.get(col);
+			for (int i = 0; i < colValues.size(); i++) {
+				fcounts[colValues.get(i)]++;
+			}
+		}
+		
+		// creating arrays for each feature, using the fcounts
+		int[][] feat2cols = new int[ nrow ][];
+		for (int row = 0; row < nrow; row++) {
+			feat2cols[row] = new int[ fcounts[row] ];
+		}
+		
+		for (int col = 0; col < cols.size(); col++) {
+			for (int row : cols.get(col)) {
+				feat2cols[row][ --fcounts[row] ] = col;
+			}
+		}
+		
+		// multiplying and summing the rows
+		int add = 0;
+		for (int col2 = 0; col2 < b.cols.size(); col2++) {
+			for (int feat : b.cols.get(col2)) {
+				int[] cols1 = feat2cols[feat];
+				for (int c : cols1) {
+					prod[add + c]++;
+				}
+			}
+			add += cols.size();
+		}
+		
+		return prod;
+	}
+
+	
 	public String getStats() {
 		return String.format("[ %d x %d ] with %d nonzeros.", nrow(), ncol(), sum() );
 	}
@@ -133,17 +179,28 @@ public class SparseBoolMatrix {
 		SparseBoolMatrix m2 = m.extractCols(2759, m.ncol());
 		System.out.println( "m1 = " + m1.getStats() );
 		System.out.println( "m2 = " + m2.getStats() );
-		
+
+		// testing product:
 		Timer.tic();
-		int[] p = m1.prodSum(m2);
-		Timer.toc();
+		int[] prod = m1.prod(m2);
+		Timer.toc(">>> m1.prod(m2)");
+		System.out.println( 
+			String.format("prod = [ %d, %d, %d, %d, %d, %d, ... ]", 
+					prod[0], prod[1], prod[2], prod[3], prod[4], prod[5] )
+			// should be prod = [ 14, 14, 11, 12, 12, 15... ]
+		); 
+
+		// testing prodSum:
+		Timer.tic();
+		int[] prodSum = m1.prodSum(m2);
+		Timer.toc(">>> m1.prodSum( m2 )");
 		long sum = 0;
-		for (int i = 0; i < p.length; i++) {
-			sum += p[i];
+		for (int i = 0; i < prodSum.length; i++) {
+			sum += prodSum[i];
 		}
 		System.out.println( sum );
-		System.out.println( "p[0] = " + p[0] + " (should be "+ 38198 +" )" ); 
-		System.out.println( "p[1] = " + p[1] + " (should be "+ 34573 +" )" );
+		System.out.println( "p[0] = " + prodSum[0] + " (should be "+ 38198 +")" ); 
+		System.out.println( "p[1] = " + prodSum[1] + " (should be "+ 34573 +")" );
 	}
 
 }
